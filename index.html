@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Blue Circle Highlighter (Demo)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; }
+    .choice { display: inline-block; margin: 8px; padding: 12px 18px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
+    .overlay-circle {
+      position: absolute;
+      pointer-events: none; /* let clicks pass through */
+      border: 4px solid rgba(20,120,240,0.95);
+      border-radius: 50%;
+      box-shadow: 0 6px 18px rgba(20,120,240,0.15);
+      transition: transform 0.12s ease, opacity 0.12s ease;
+      transform-origin: center center;
+      opacity: 0.999;
+      z-index: 9999;
+      background: transparent;
+    }
+    .controls { margin-top: 20px; }
+    .hint { color: #666; font-size: .95rem; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Blue Circle Highlighter — Demo</h2>
+  <p>Click any "choice" below to put a blue circular outline around it.</p>
+
+  <div id="question">
+    <div class="choice">A) 3</div>
+    <div class="choice">B) 4</div>
+    <div class="choice">C) 5</div>
+    <div class="choice">D) 6</div>
+  </div>
+
+  <div class="controls">
+    <button id="clearBtn">Clear circle</button>
+    <label style="margin-left:12px">
+      <input id="snapToBox" type="checkbox" checked /> Fit circle to element bounding box
+    </label>
+  </div>
+
+  <p class="hint">This demo only highlights elements you click. It does not read or determine correct answers.</p>
+
+  <script>
+    const snapToBoxCheckbox = document.getElementById('snapToBox');
+    let circle = null;
+
+    function createCircle() {
+      if (circle) return circle;
+      const el = document.createElement('div');
+      el.className = 'overlay-circle';
+      document.body.appendChild(el);
+      circle = el;
+      return circle;
+    }
+
+    function clearCircle() {
+      if (circle) {
+        circle.style.opacity = '0';
+        try { circle.remove(); } catch(e) {}
+        circle = null;
+      }
+    }
+
+    function placeCircleAround(target) {
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const padding = 8; // extra space around element
+      // Determine center and radius depending on option
+      if (snapToBoxCheckbox.checked) {
+        // Fit a circle that fully contains the element's bounding box
+        const width = rect.width + padding*2;
+        const height = rect.height + padding*2;
+        const diameter = Math.max(width, height);
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        const el = createCircle();
+        el.style.width = diameter + 'px';
+        el.style.height = diameter + 'px';
+        el.style.left = (cx - diameter/2) + 'px';
+        el.style.top = (cy - diameter/2) + 'px';
+        el.style.opacity = '1';
+      } else {
+        // Draw a small circle centered on the element
+        const diameter = Math.max(48, Math.min(160, Math.max(rect.width, rect.height) + padding*2));
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        const el = createCircle();
+        el.style.width = diameter + 'px';
+        el.style.height = diameter + 'px';
+        el.style.left = (cx - diameter/2) + 'px';
+        el.style.top = (cy - diameter/2) + 'px';
+        el.style.opacity = '1';
+      }
+    }
+
+    // Click handler: highlight clicked .choice items (or any clicked element if you prefer)
+    document.addEventListener('click', (ev) => {
+      // If user clicked the "clear" button, ignore here
+      const clearBtn = document.getElementById('clearBtn');
+      if (ev.target === clearBtn) return;
+      // Find the closest .choice ancestor (including itself)
+      const choice = ev.target.closest('.choice');
+      if (choice) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        placeCircleAround(choice);
+      } else {
+        // clicking elsewhere clears the highlight
+        clearCircle();
+      }
+    }, true);
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      clearCircle();
+    });
+  </script>
+</body>
+</html>
